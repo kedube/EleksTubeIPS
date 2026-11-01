@@ -1,6 +1,6 @@
 # A Custom Firmware for the EleksTube IPS V1 clock
 
-This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTubeIPS). Version 2.0.6 is based on upstream 1.9.5. It adds much more Home Assistant control, a login for the web UI, a few new settings, and fixes for several crashes and slow pages. Everything else works as described in the [upstream wiki](https://github.com/judge2005/EleksTubeIPS/wiki).
+This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTubeIPS). Version 2.0.7 is based on upstream 1.9.5. It adds much more Home Assistant control, a login for the web UI, a few new settings, and fixes for several crashes and slow pages. Everything else works as described in the [upstream wiki](https://github.com/judge2005/EleksTubeIPS/wiki).
 
 ## What's different from upstream
 
@@ -29,7 +29,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 
 ### Stability
 
-* **The clock no longer restarts, and pages no longer stop loading, while it fetches the weather.** The secure connection to OpenWeatherMap takes about 50 KB, which left the rest of the clock a few KB for anything from 5 to 30 seconds after starting up and every 15 minutes. A web page or file being sent then lost data and never finished loading, the clock could abort when a browser connected, and Wi-Fi dropped incoming packets. The connection now borrows the displays' drawing buffer, which isn't used while the weather is fetched, and the web server waits for memory instead of losing data or aborting. The first fetch is now 30 seconds after the clock starts.
+* **The clock no longer restarts, and pages no longer stop loading, while it fetches the weather.** The secure connection to OpenWeatherMap takes about 50 KB, which left the rest of the clock a few KB for anything from 5 to 30 seconds after starting up and every 15 minutes. A web page or file being sent then lost data and never finished loading, the clock could abort when a browser connected, and Wi-Fi dropped incoming packets. The connection now borrows the displays' drawing buffer, which isn't used while the weather is fetched, and the web server waits for memory instead of losing data, and closes a new connection it has no memory for instead of aborting. The first fetch is now 30 seconds after the clock starts.
 * Updated the network library (AsyncTCP) from 1.1.1 to [esp32async 3.5.0](https://github.com/ESP32Async/AsyncTCP). The old version crashed when connections opened and closed quickly, for example under a busy browser or a network scan.
 * Fixed a crash when the web UI was sent updates from more than one task at once.
 * Fixed a crash when switching the screen saver between Blank and Matrix with hue cycling on.
@@ -65,26 +65,26 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 * Backlight, Screen Saver Delay and Display have icons in Home Assistant that match what they control.
 * When the forecast is a day short, that day shows the "unknown" icon instead of an old one from an earlier forecast.
 
-## Installing 2.0.6
+## Installing 2.0.7
 
-This firmware can't update itself over Wi-Fi, so flash it over USB. The easiest way is the [web installer](https://kedube.github.io/EleksTubeIPS/), which works in Chrome or Edge on a computer. To use esptool.py instead, download the files from the [2.0.6 release](https://github.com/kedube/EleksTubeIPS/releases/tag/v2.0.6). The [upstream installation guide](https://github.com/judge2005/EleksTubeIPS/wiki/Installation) covers connecting the clock and backing up its original firmware.
+This firmware can't update itself over Wi-Fi, so flash it over USB. The easiest way is the [web installer](https://kedube.github.io/EleksTubeIPS/), which works in Chrome or Edge on a computer. To use esptool.py instead, download the files from the [2.0.7 release](https://github.com/kedube/EleksTubeIPS/releases/tag/v2.0.7). The [upstream installation guide](https://github.com/judge2005/EleksTubeIPS/wiki/Installation) covers connecting the clock and backing up its original firmware.
 
 | Clock | Firmware file |
 |---|---|
-| EleksTube IPS V1, Xunfeng IPS | `firmware-elekstubev1-2.0.6.bin` |
-| EleksTube IPS V2 | `firmware-elekstubev2-2.0.6.bin` |
-| NovelLife SE | `firmware-novellifese-2.0.6.bin` |
-| Si Hai | `firmware-sihai-2.0.6.bin` |
-| PCBWay PunkCyber | `firmware-punkcyber-2.0.6.bin` |
-| IPSTube (H401/H402) | `firmware-ipstube-2.0.6.bin` |
-| IPSTube with hardware dimming | `firmware-ipstube_dim-2.0.6.bin` |
+| EleksTube IPS V1, Xunfeng IPS | `firmware-elekstubev1-2.0.7.bin` |
+| EleksTube IPS V2 | `firmware-elekstubev2-2.0.7.bin` |
+| NovelLife SE | `firmware-novellifese-2.0.7.bin` |
+| Si Hai | `firmware-sihai-2.0.7.bin` |
+| PCBWay PunkCyber | `firmware-punkcyber-2.0.7.bin` |
+| IPSTube (H401/H402) | `firmware-ipstube-2.0.7.bin` |
+| IPSTube with hardware dimming | `firmware-ipstube_dim-2.0.7.bin` |
 
 Some clocks sold as an EleksTube IPS V2 need the V1 firmware. If every display shows the same digit after installing, install the other EleksTube version's firmware file. Your settings are kept.
 
 **Upgrading from an earlier 2.0 release, or from upstream 1.9.4 or later:** flash only the firmware file. Your settings, Wi-Fi details and uploaded images are kept. In Home Assistant, the existing entities keep their IDs and the new ones appear by themselves. Going back to 2.0.5 or earlier resets the clock's settings, because 2.0.6 added some.
 
 ```
-esptool.py --chip esp32 --port <port> write_flash 0x10000 firmware-elekstubev1-2.0.6.bin
+esptool.py --chip esp32 --port <port> write_flash 0x10000 firmware-elekstubev1-2.0.7.bin
 ```
 
 **New install, or upgrading from upstream before 1.9.4:** flash all five files. The IPSTube clocks use the `8MB` versions of the bootloader, partition table and filesystem image.
@@ -92,7 +92,7 @@ esptool.py --chip esp32 --port <port> write_flash 0x10000 firmware-elekstubev1-2
 ```
 esptool.py --chip esp32 --port <port> write_flash \
   0x1000 bootloader.bin 0x8000 partitions.bin 0xe000 boot_app0.bin \
-  0x10000 firmware-elekstubev1-2.0.6.bin 0x180000 littlefs-2.0.6.bin
+  0x10000 firmware-elekstubev1-2.0.7.bin 0x180000 littlefs-2.0.7.bin
 ```
 
 ## Showing your own text
@@ -196,4 +196,4 @@ See [the wiki](https://github.com/judge2005/EleksTubeIPS/wiki "wiki") for detail
 
 This code wouldn't exist without the work done by the people on [this reddit discussion](https://www.reddit.com/r/arduino/comments/mq5td9/hacking_the_elekstube_ips_clock_anyone_tried_it/).
 
-Version 2.0.6 of this fork builds on [judge2005's firmware](https://github.com/judge2005/EleksTubeIPS).
+Version 2.0.7 of this fork builds on [judge2005's firmware](https://github.com/judge2005/EleksTubeIPS).
