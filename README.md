@@ -46,6 +46,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 * The firmware has about 220 KB of flash to spare. Upstream 1.9.5 is 48 bytes short of the limit, so any addition stopped it booting. Most of the room comes from dropping the web server's regular-expression support, which only one URL used. The build now fails if the firmware is too big, instead of producing one that won't boot.
 * The weather display is redrawn when the weather, its colors or the brightness change, instead of every 10 seconds.
 * Each weather update makes one request fewer, and skips connecting at all if no API key is set.
+* A weather update takes about a second instead of five, and the clock has about 10 KB more memory free. The web server's task had four times the stack it uses, and the status message's 4 KB are only allocated while one is shown.
 
 ### Building
 
