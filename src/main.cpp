@@ -64,7 +64,7 @@ IRAMPtrArray<const char*> manifest {
 	"Unknown clock hardware",
 #endif
 	// Firmware version
-	"2.0.2",
+	"2.0.3",
 	// Hardware chip/variant
 	"ESP32",
 	// Device name
