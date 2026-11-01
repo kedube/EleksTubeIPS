@@ -47,7 +47,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 
 ## Installing 2.0.0
 
-Download the files from the [2.0.0 release](https://github.com/kedube/EleksTubeIPS/releases/tag/v2.0.0). This firmware can't update itself over Wi-Fi, so flash it over USB. The [upstream installation guide](https://github.com/judge2005/EleksTubeIPS/wiki/Installation) covers connecting the clock and backing up its original firmware.
+This firmware can't update itself over Wi-Fi, so flash it over USB. The easiest way is the [web installer](https://kedube.github.io/EleksTubeIPS/), which works in Chrome or Edge on a computer. To use esptool.py instead, download the files from the [2.0.0 release](https://github.com/kedube/EleksTubeIPS/releases/tag/v2.0.0). The [upstream installation guide](https://github.com/judge2005/EleksTubeIPS/wiki/Installation) covers connecting the clock and backing up its original firmware.
 
 | Clock | Firmware file |
 |---|---|
