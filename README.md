@@ -16,7 +16,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 * **Upload and delete clock faces, weather icons and slide shows over MQTT** ([upstream issue #85](https://github.com/judge2005/EleksTubeIPS/issues/85)). The Clock Face, Weather Icons and Slide Show selects update when files are added or removed. See [Uploading files over MQTT](#uploading-files-over-mqtt).
 * **Settings changed from Home Assistant are saved**, so they survive a restart. Upstream lost changes to Brightness, Display and Screen Saver Delay. Values are kept within the same ranges as the web UI.
 * **Your MQTT password and OpenWeatherMap API key are no longer published.** Upstream included the whole configuration, credentials too, in the state it publishes to the broker.
-* Only settings that have an entity can be changed over MQTT. Time zone, time server, hostname, Wi-Fi, static IP address, MQTT settings and the OpenWeatherMap API key can't.
+* Only settings that have an entity can be changed over MQTT. Time zone, time server, hostname, Wi-Fi, static IP address, MQTT settings, the OpenWeatherMap API key and the web UI login can't.
 * Changing the clock's hostname gives its entities new IDs. To remove the old ones, delete the clock's device in Home Assistant, then restart the clock.
 * Discovery no longer stalls the MQTT connection at startup, and matrix hue cycling no longer republishes the clock's whole state every second.
 
@@ -25,6 +25,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 * **Cycle through time, date and weather** ([upstream issue #31](https://github.com/judge2005/EleksTubeIPS/issues/31)). Set **Cycle Time, Date, Weather** on the Clock page, or **Display Cycle Time** in Home Assistant, to the number of seconds each one is shown. 0 turns cycling off. Weather is skipped if there's no OpenWeatherMap API key.
 * **Choose the time server** ([upstream issue #41](https://github.com/judge2005/EleksTubeIPS/issues/41)). **Time Server** on the Network page takes a name or an IP address, such as a server on your own network. The default is pool.ntp.org.
 * **Show your own text from a script**, not just over MQTT ([upstream issue #31](https://github.com/judge2005/EleksTubeIPS/issues/31)). See [Showing your own text](#showing-your-own-text).
+* **Require a login for the web UI.** Set **Web UI User** and **Web UI Password** on the Network page and the clock asks for them before every page, upload and `/custom` request. Clear either one to turn the login off. The user can have letters, digits and `. _ - @`, and the password letters, digits, spaces and punctuation, without accents. The password is never sent back to the browser or published over MQTT. The clock doesn't ask for the login through its own Wi-Fi portal, so if you forget it, start the clock where it can't join your Wi-Fi, connect to its access point, choose **Configure Clock** and change it on the Network page.
 
 ### Stability
 
@@ -102,7 +103,7 @@ curl -d value=12:34 http://<clock>/custom
 curl -d value=clear http://<clock>/custom
 ```
 
-`curl http://<clock>/custom` replies with the text being shown. Over MQTT, publish the text to `clock/<id>/set/custom`, see below.
+`curl http://<clock>/custom` replies with the text being shown. If the web UI has a login, add it with `-u <user>:<password>`. Over MQTT, publish the text to `clock/<id>/set/custom`, see below.
 
 ## Uploading files over MQTT
 
