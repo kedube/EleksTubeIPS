@@ -49,6 +49,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 ### Building
 
 * The firmware builds without compiler warnings (upstream printed about 960 lines of them), and the web UI build installs far fewer npm packages.
+* The build patches the web server library with the fixes above, from `patches/`. If the library changes so that a patch no longer applies, the build stops and says so.
 
 ### Other fixes
 
