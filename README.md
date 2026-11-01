@@ -6,6 +6,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 
 ### Home Assistant and MQTT
 
+* **Entities keep working after Home Assistant restarts.** When Home Assistant starts, it asks devices to describe their entities again. Since upstream 1.8.1 the clock's check for that request was inverted, so it answered when Home Assistant shut down and stayed silent when it came back. After a Home Assistant restart, controls such as Backlight and Screen Saver stopped working until the clock was restarted too.
 * **33 Home Assistant entities instead of 6.** Almost every setting in the web UI can now be changed from Home Assistant. Everyday controls are listed under Controls, and set-and-forget settings under Configuration.
 
   <img src="docs/ha_controls.png" alt="The clock's Controls in Home Assistant" width="380"> <img src="docs/ha_configuration.png" alt="The clock's Configuration in Home Assistant" width="380">
@@ -33,8 +34,13 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 * The weather display is redrawn when the weather, its colors or the brightness change, instead of every 10 seconds.
 * Each weather update makes one request fewer, and skips connecting at all if no API key is set.
 
+### Building
+
+* The firmware builds without compiler warnings (upstream printed about 960 lines of them), and the web UI build installs far fewer npm packages.
+
 ### Other fixes
 
+* If the archive for the selected clock face, weather icons or slide show is missing, the clock reliably goes back to the previous one.
 * Uploading a new version of the clock face, weather icons or slide show in use now shows it straight away.
 * A brightness change from Home Assistant now redraws the weather display immediately.
 * When the forecast is a day short, that day shows the "unknown" icon instead of an old one from an earlier forecast.
