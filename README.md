@@ -59,13 +59,13 @@ This firmware can't update itself over Wi-Fi, so flash it over USB. The easiest 
 | IPSTube (H401/H402) | `firmware-ipstube-2.0.1.bin` |
 | IPSTube with hardware dimming | `firmware-ipstube_dim-2.0.1.bin` |
 
-**Upgrading from 2.0.0 or upstream 1.9.x:** flash only the firmware file. Your settings, Wi-Fi details and uploaded images are kept. In Home Assistant, the existing entities keep their IDs and the new ones appear by themselves.
+**Upgrading from 2.0.0, or from upstream 1.9.4 or later:** flash only the firmware file. Your settings, Wi-Fi details and uploaded images are kept. In Home Assistant, the existing entities keep their IDs and the new ones appear by themselves.
 
 ```
 esptool.py --chip esp32 --port <port> write_flash 0x10000 firmware-elekstubev1-2.0.1.bin
 ```
 
-**New install:** flash all five files. The IPSTube clocks use the `8MB` versions of the bootloader, partition table and filesystem image.
+**New install, or upgrading from upstream before 1.9.4:** flash all five files. The IPSTube clocks use the `8MB` versions of the bootloader, partition table and filesystem image.
 
 ```
 esptool.py --chip esp32 --port <port> write_flash \
@@ -124,12 +124,14 @@ This firmware uses the WiFi support that your clock already has to sync the time
 * It has a screen saver.
 * There is also a tool to convert images in to a format that can be displayed on the clock
 * It connects to an MQTT broker for Home Assistant control of almost every setting, uploading images, movement and luminance sensors, and a custom display value. The full state of the clock is published too, without passwords or API keys. See [What's different from upstream](#whats-different-from-upstream) and the upstream [User Guide](https://github.com/judge2005/EleksTubeIPS/wiki/User-Guide#mqtthome-assistant).
-* There are specific variants for:
-  * The [EleksTube v1 clock](https://www.nixies.us/projects/elekstubeips-clock/elekstube-ips-v1/)
-  * The [Si Hai](https://www.nixies.us/projects/elekstubeips-clock/elekstube-ips-v1-3/) clock
-  * The [NovelLife SE](https://www.nixies.us/projects/elekstubeips-clock/elekstube-ips-v1-2/) clock
-  * The [PCBWay 'Punkcyber'](https://www.nixies.us/projects/elekstubeips-clock/elekstube-ips-v1-4/) clock
-  * The [IPSTube](https://www.nixies.us/projects/elekstubeips-clock/elekstube-ips-v1-2-2/) clock
+* There are specific variants for these clocks. Each link opens the web installer with that clock chosen:
+  * [EleksTube IPS V1](https://kedube.github.io/EleksTubeIPS/#elekstubev1), and the Xunfeng IPS
+  * [EleksTube IPS V2](https://kedube.github.io/EleksTubeIPS/#elekstubev2)
+  * [NovelLife SE](https://kedube.github.io/EleksTubeIPS/#novellifese)
+  * [Si Hai](https://kedube.github.io/EleksTubeIPS/#sihai)
+  * [PCBWay PunkCyber](https://kedube.github.io/EleksTubeIPS/#punkcyber), also called the RGB Glow Tube DIY Clock
+  * [IPSTube](https://kedube.github.io/EleksTubeIPS/#ipstube) (H401/H402)
+  * [IPSTube with hardware dimming](https://kedube.github.io/EleksTubeIPS/#ipstube_dim)
 
 This image shows the clock running in 4 digit mode with weather forecast
 
