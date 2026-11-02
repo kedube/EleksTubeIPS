@@ -1,6 +1,6 @@
 # A Custom Firmware for the EleksTube IPS V1 clock
 
-This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTubeIPS). Version 2.0.9 is based on upstream 1.9.5. It adds much more Home Assistant control, a login for the web UI, a few new settings, and fixes for several crashes and slow pages. Everything else works as described in the [upstream wiki](https://github.com/judge2005/EleksTubeIPS/wiki).
+This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTubeIPS). Version 2.0.9 is based on upstream 1.9.5. It adds much more Home Assistant control, a login for the web UI, a few new settings, and fixes for several crashes and slow pages. The [User Guide](docs/user-guide.md) covers setting up and using the clock.
 
 ## What's different from upstream
 
@@ -31,6 +31,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 ### Web UI
 
 * **A new look, with light and dark themes.** The moon or sun button at the top of each page switches between them. Until you use it, the web UI follows your phone's or computer's light or dark setting.
+* **The i button on each page opens that page's part of the new [User Guide](docs/user-guide.md)**, which covers this firmware's settings and the access point's new name and password. Upstream's links went to its wiki.
 * Clearer labels, with units, and a clearer explanation of the time zone setting.
 * Going to the clock's address opens the web UI straight away, rather than through a page that redirects to it. A full install also removes the picture of a mermaid shown while the web UI loads.
 * Installing only the firmware is enough for everything else here.
@@ -166,7 +167,7 @@ This firmware uses the WiFi support that your clock already has to sync the time
 * You can switch between time, date and weather using the buttons.
 * It has a screen saver.
 * There is also a tool to convert images in to a format that can be displayed on the clock
-* It connects to an MQTT broker for Home Assistant control of almost every setting, uploading images, movement and luminance sensors, and a custom display value. The full state of the clock is published too, without passwords or API keys. See [What's different from upstream](#whats-different-from-upstream) and the upstream [User Guide](https://github.com/judge2005/EleksTubeIPS/wiki/User-Guide#mqtthome-assistant).
+* It connects to an MQTT broker for Home Assistant control of almost every setting, uploading images, movement and luminance sensors, and a custom display value. The full state of the clock is published too, without passwords or API keys. See [What's different from upstream](#whats-different-from-upstream) and [MQTT and Home Assistant](docs/user-guide.md#mqtt-and-home-assistant) in the User Guide.
 * There are specific variants for these clocks. Each link opens the web installer with that clock chosen:
   * [EleksTube IPS V1](https://kedube.github.io/EleksTubeIPS/#elekstubev1), and the Xunfeng IPS
   * [EleksTube IPS V2](https://kedube.github.io/EleksTubeIPS/#elekstubev2)
@@ -190,11 +191,11 @@ This shows the digital rain screen saver:
 
 ## Documentation
 
-See [the wiki](https://github.com/judge2005/EleksTubeIPS/wiki "wiki") for detailed information on how to build, install and use this firmware.
+* The [User Guide](docs/user-guide.md) takes you through connecting the clock to Wi-Fi, every page of the web UI, and the clock's buttons. The **i** button at the top of each page of the web UI opens its part of the guide.
+
+The upstream wiki covers the rest:
 
 * [Installation](https://github.com/judge2005/EleksTubeIPS/wiki/Installation) takes you through backing up the original firmware, building the custom firmware and uploading it to the clock
-* [Connecting to WiFi](https://github.com/judge2005/EleksTubeIPS/wiki/Connecting-to-WiFi) takes you through getting your clock connected to your router so it can sync the time with NTP and you can configure it using a web browser.
-* [User Guide](https://github.com/judge2005/EleksTubeIPS/wiki/User-Guide) shows you how to configure and control your clock.
 * [Image Collections](https://github.com/judge2005/EleksTubeIPS/wiki/Image-Collections) tells you how to prepare new clock faces and weather icon sets so that they can be uploaded to the clock and used.
 * [Hardware Modification](https://github.com/judge2005/EleksTubeIPS/wiki/Hardware-Modification) details a mod that you might want to make to your clock, but only if you are comfortable wielding a soldering iron.
 
