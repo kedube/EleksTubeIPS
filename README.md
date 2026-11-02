@@ -44,6 +44,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 * If the archive for the selected clock face, weather icons or slide show is missing, the clock reliably goes back to the previous one.
 * Uploading a new version of the clock face, weather icons or slide show in use now shows it straight away.
 * **Sets with long names can be chosen with the buttons.** The button menu kept 15 characters of each name, and a name that long or longer ran into the next one, so choosing a set such as nixie_thin_blue from it showed "Reverting!" and kept the one you had. The menu now holds the longest name a set can have.
+* **The displays say why a set couldn't be loaded**, which matters for one chosen with the buttons: "Not enough memory!" when the clock was too busy, and "Couldn't unpack!" otherwise. Upstream showed "Reverting!" for both, even when nothing had changed.
 
 ### Stability
 
