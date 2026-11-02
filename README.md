@@ -37,6 +37,13 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 * **A new icon**, a picture of an EleksTube clock rather than a mermaid, in the browser's tabs and bookmarks and on a phone's home screen.
 * Installing only the firmware is enough for everything else here.
 
+### Clock faces, weather icons and slide shows
+
+* **The clock says when a set won't fit.** The clock face, weather icons and slide show in use are kept unpacked, which takes more room than their files. When there wasn't room for the one you chose, upstream removed the one in use, failed to unpack the new one, showed "Reverting!" and unpacked the old one again, without saying why, as the library took a full filesystem for an invalid file. The clock now checks first, keeps the one it has without unpacking anything, shows "Not enough space!" on its displays, and says so on the Files page.
+* **A set that runs out of space partway is no longer kept with images missing.** The unpacking library stopped at the first file that didn't fit and reported success, so some digits showed nothing. The clock now puts the previous set back.
+* If the archive for the selected clock face, weather icons or slide show is missing, the clock reliably goes back to the previous one.
+* Uploading a new version of the clock face, weather icons or slide show in use now shows it straight away.
+
 ### Stability
 
 * **The clock no longer restarts, and pages no longer stop loading, while it fetches the weather.** The secure connection to OpenWeatherMap takes about 50 KB, which left the rest of the clock a few KB for anything from 5 to 30 seconds after starting up and every 15 minutes. A web page or file being sent then lost data and never finished loading, the clock could abort when a browser connected, and Wi-Fi dropped incoming packets. The connection now borrows the displays' drawing buffer, which isn't used while the weather is fetched, and the web server waits for memory instead of losing data, and closes a new connection it has no memory for instead of aborting. The first fetch is now 30 seconds after the clock starts.
@@ -61,15 +68,13 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 ### Building
 
 * The firmware builds without compiler warnings (upstream printed about 960 lines of them), and the web UI build installs far fewer npm packages.
-* The build patches the web server library with the fixes above, from `patches/`. If the library changes so that a patch no longer applies, the build stops and says so.
+* The build patches two libraries with the fixes above, from `patches/`: the web server, and ESP32-targz, which unpacks images. If a library changes so that its patch no longer applies, the build stops and says so.
 
 ### Other fixes
 
 * **The static IP address is kept** (from a comment on [upstream issue #31](https://github.com/judge2005/EleksTubeIPS/issues/31)). The address set with **Configure Static WiFi** in the clock's Wi-Fi portal was used until the clock restarted, then it went back to DHCP. The clock now saves it, and restarts to use a new one. An empty Subnet means 255.255.255.0, and an empty DNS1 means the gateway. Clear Static IP to go back to DHCP.
 * **Installing only the firmware updates the settings pages too.** They're now built into the firmware as well as the filesystem image, so new settings appear without a full install, which would replace your uploaded images.
 * A forecast that fails to download or arrives incomplete is retried after 3 minutes instead of 15, and whatever did arrive is shown ([upstream issue #92](https://github.com/judge2005/EleksTubeIPS/issues/92)).
-* If the archive for the selected clock face, weather icons or slide show is missing, the clock reliably goes back to the previous one.
-* Uploading a new version of the clock face, weather icons or slide show in use now shows it straight away.
 * A brightness change from Home Assistant now redraws the weather display immediately.
 * Home Assistant refuses Custom Data longer than six characters, the most the clock can show. The clock ignored longer text without an error, so Home Assistant kept showing the old text.
 * Backlight, Screen Saver Delay and Display have icons in Home Assistant that match what they control.
