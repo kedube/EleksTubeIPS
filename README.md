@@ -63,6 +63,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 
 ### Speed and size
 
+* **Opening the web UI again takes a few hundred bytes instead of 147 KB.** The browser now keeps the web UI's page, stylesheet, icons and settings pages, and asks the clock whether they've changed instead of downloading them every time.
 * The Info page loads in about 10 ms instead of 1.5 s, and the Files page in under 0.1 s instead of 0.5 s.
 * The firmware has about 220 KB of flash to spare. Upstream 1.9.5 is 48 bytes short of the limit, so any addition stopped it booting. Most of the room comes from dropping the web server's regular-expression support, which only one URL used. The build now fails if the firmware is too big, instead of producing one that won't boot.
 * The weather display is redrawn when the weather, its colors or the brightness change, instead of every 10 seconds.
