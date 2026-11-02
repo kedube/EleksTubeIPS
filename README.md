@@ -48,6 +48,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 
 * **The clock no longer freezes after changing clock faces.** Unpacking a face took 36 KB of the clock's memory, and with the web UI busy at the same time, the ESP32's Wi-Fi driver could jam. It went on receiving but sent nothing, so the clock answered no ping, web page, weather or MQTT until it was restarted, though it kept running and stayed connected. Unpacking now borrows the displays' drawing buffer, as the weather fetch does. If Wi-Fi still can't send anything for 15 seconds, the clock reconnects it, which clears the jam in a couple of seconds.
 * Unpacking a face, or fetching the weather, no longer aborts the clock when memory is short or in pieces too small. The unpacking library now reports it, and the weather is tried again 3 minutes later.
+* A web connection that arrives when there's no memory for it no longer stops the clock with "tcp_receive: wrong state". AsyncTCP closed the connection, then told the network stack it was still open.
 * **The clock no longer restarts, and pages no longer stop loading, while it fetches the weather.** The secure connection to OpenWeatherMap takes about 50 KB, which left the rest of the clock a few KB for anything from 5 to 30 seconds after starting up and every 15 minutes. A web page or file being sent then lost data and never finished loading, the clock could abort when a browser connected, and Wi-Fi dropped incoming packets. The connection now borrows the displays' drawing buffer, which isn't used while the weather is fetched, and the web server waits for memory instead of losing data, and closes a new connection it has no memory for instead of aborting. The first fetch is now 30 seconds after the clock starts.
 * Updated the network library (AsyncTCP) from 1.1.1 to [esp32async 3.5.0](https://github.com/ESP32Async/AsyncTCP). The old version crashed when connections opened and closed quickly, for example under a busy browser or a network scan.
 * Fixed a crash when the web UI was sent updates from more than one task at once.
@@ -70,7 +71,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 ### Building
 
 * The firmware builds without compiler warnings (upstream printed about 960 lines of them), and the web UI build installs far fewer npm packages.
-* The build patches two libraries with the fixes above, from `patches/`: the web server, and ESP32-targz, which unpacks images. If a library changes so that its patch no longer applies, the build stops and says so.
+* The build patches three libraries with the fixes above, from `patches/`: the web server, AsyncTCP, and ESP32-targz, which unpacks images. If a library changes so that its patch no longer applies, the build stops and says so.
 
 ### Other fixes
 
