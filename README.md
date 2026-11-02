@@ -1,6 +1,6 @@
 # A Custom Firmware for the EleksTube IPS V1 clock
 
-This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTubeIPS). Version 2.1.1 is based on upstream 1.9.5. It adds much more Home Assistant control, a new look and a login for the web UI, a user guide, a few new settings, and fixes for several crashes and slow pages. The [User Guide](docs/user-guide.md) covers setting up and using the clock.
+This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTubeIPS). Version 2.1.1 is based on upstream 1.9.5. It adds much more Home Assistant control, a new look and a login for the web UI, a user guide, a few new settings, and fixes for a freeze, several crashes and slow pages. The [User Guide](docs/user-guide.md) covers setting up and using the clock.
 
 ## What's different from upstream
 
@@ -46,6 +46,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 
 ### Stability
 
+* **The clock no longer freezes after changing clock faces.** Unpacking a face took 36 KB of the clock's memory, and with the web UI busy at the same time, the ESP32's Wi-Fi driver could jam. It went on receiving but sent nothing, so the clock answered no ping, web page, weather or MQTT until it was restarted, though it kept running and stayed connected. Unpacking now borrows the displays' drawing buffer, as the weather fetch does. If Wi-Fi still can't send anything for 15 seconds, the clock reconnects it, which clears the jam in a couple of seconds.
 * **The clock no longer restarts, and pages no longer stop loading, while it fetches the weather.** The secure connection to OpenWeatherMap takes about 50 KB, which left the rest of the clock a few KB for anything from 5 to 30 seconds after starting up and every 15 minutes. A web page or file being sent then lost data and never finished loading, the clock could abort when a browser connected, and Wi-Fi dropped incoming packets. The connection now borrows the displays' drawing buffer, which isn't used while the weather is fetched, and the web server waits for memory instead of losing data, and closes a new connection it has no memory for instead of aborting. The first fetch is now 30 seconds after the clock starts.
 * Updated the network library (AsyncTCP) from 1.1.1 to [esp32async 3.5.0](https://github.com/ESP32Async/AsyncTCP). The old version crashed when connections opened and closed quickly, for example under a busy browser or a network scan.
 * Fixed a crash when the web UI was sent updates from more than one task at once.
