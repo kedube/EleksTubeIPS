@@ -34,6 +34,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 * **The i button on each page opens that page's part of the new [User Guide](docs/user-guide.md)**, which covers this firmware's settings and the access point's new name and password. Upstream's links went to its wiki.
 * Clearer labels, with units, and a clearer explanation of the time zone setting.
 * Going to the clock's address opens the web UI straight away, rather than through a page that redirects to it. A full install also removes the picture of a mermaid shown while the web UI loads.
+* **A new icon**, a picture of an EleksTube clock rather than a mermaid, in the browser's tabs and bookmarks and on a phone's home screen.
 * Installing only the firmware is enough for everything else here.
 
 ### Stability
