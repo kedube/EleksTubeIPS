@@ -32,6 +32,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 
 * **A new look, with light and dark themes.** The moon or sun button at the top of each page switches between them. Until you use it, the web UI follows your phone's or computer's light or dark setting.
 * Clearer labels, with units, and a clearer explanation of the time zone setting.
+* Going to the clock's address opens the web UI straight away, rather than through a page that redirects to it. A full install also removes the picture of a mermaid shown while the web UI loads.
 * Installing only the firmware is enough for everything else here.
 
 ### Stability
