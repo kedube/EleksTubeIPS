@@ -1,6 +1,6 @@
 # A Custom Firmware for the EleksTube IPS V1 clock
 
-This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTubeIPS). Version 2.1.1 is based on upstream 1.9.5. It adds much more Home Assistant control, a new look and a login for the web UI, a user guide, a few new settings, and fixes for a freeze, several crashes and slow pages. The [User Guide](docs/user-guide.md) covers setting up and using the clock.
+This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTubeIPS). Version 2.1.2 is based on upstream 1.9.5. It adds much more Home Assistant control, a new look and a login for the web UI, a user guide, a few new settings, and fixes for a freeze, several crashes and slow pages. The [User Guide](docs/user-guide.md) covers setting up and using the clock.
 
 ## What's different from upstream
 
@@ -86,26 +86,26 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 * Backlight, Screen Saver Delay and Display have icons in Home Assistant that match what they control.
 * When the forecast is a day short, that day shows the "unknown" icon instead of an old one from an earlier forecast.
 
-## Installing 2.1.1
+## Installing 2.1.2
 
-This firmware can't update itself over Wi-Fi, so flash it over USB. The easiest way is the [web installer](https://kedube.github.io/EleksTubeIPS/), which works in Chrome or Edge on a computer. To use esptool.py instead, download the files from the [2.1.1 release](https://github.com/kedube/EleksTubeIPS/releases/tag/v2.1.1). The [upstream installation guide](https://github.com/judge2005/EleksTubeIPS/wiki/Installation) covers connecting the clock and backing up its original firmware.
+This firmware can't update itself over Wi-Fi, so flash it over USB. The easiest way is the [web installer](https://kedube.github.io/EleksTubeIPS/), which works in Chrome or Edge on a computer. To use esptool.py instead, download the files from the [2.1.2 release](https://github.com/kedube/EleksTubeIPS/releases/tag/v2.1.2). The [upstream installation guide](https://github.com/judge2005/EleksTubeIPS/wiki/Installation) covers connecting the clock and backing up its original firmware.
 
 | Clock | Firmware file |
 |---|---|
-| EleksTube IPS V1, Xunfeng IPS | `firmware-elekstubev1-2.1.1.bin` |
-| EleksTube IPS V2 | `firmware-elekstubev2-2.1.1.bin` |
-| NovelLife SE | `firmware-novellifese-2.1.1.bin` |
-| Si Hai | `firmware-sihai-2.1.1.bin` |
-| PCBWay PunkCyber | `firmware-punkcyber-2.1.1.bin` |
-| IPSTube (H401/H402) | `firmware-ipstube-2.1.1.bin` |
-| IPSTube with hardware dimming | `firmware-ipstube_dim-2.1.1.bin` |
+| EleksTube IPS V1, Xunfeng IPS | `firmware-elekstubev1-2.1.2.bin` |
+| EleksTube IPS V2 | `firmware-elekstubev2-2.1.2.bin` |
+| NovelLife SE | `firmware-novellifese-2.1.2.bin` |
+| Si Hai | `firmware-sihai-2.1.2.bin` |
+| PCBWay PunkCyber | `firmware-punkcyber-2.1.2.bin` |
+| IPSTube (H401/H402) | `firmware-ipstube-2.1.2.bin` |
+| IPSTube with hardware dimming | `firmware-ipstube_dim-2.1.2.bin` |
 
 Some clocks sold as an EleksTube IPS V2 need the V1 firmware. If every display shows the same digit after installing, install the other EleksTube version's firmware file. Your settings are kept.
 
 **Upgrading from an earlier 2.0 release, or from upstream 1.9.4 or later:** flash only the firmware file. Your settings, Wi-Fi details and uploaded images are kept. In Home Assistant, the existing entities keep their IDs and the new ones appear by themselves. Going back to 2.0.7 or earlier resets the clock's settings, because 2.0.8 added some.
 
 ```
-esptool.py --chip esp32 --port <port> write_flash 0x10000 firmware-elekstubev1-2.1.1.bin
+esptool.py --chip esp32 --port <port> write_flash 0x10000 firmware-elekstubev1-2.1.2.bin
 ```
 
 **New install, or upgrading from upstream before 1.9.4:** flash all five files. The IPSTube clocks use the `8MB` versions of the bootloader, partition table and filesystem image.
@@ -113,7 +113,7 @@ esptool.py --chip esp32 --port <port> write_flash 0x10000 firmware-elekstubev1-2
 ```
 esptool.py --chip esp32 --port <port> write_flash \
   0x1000 bootloader.bin 0x8000 partitions.bin 0xe000 boot_app0.bin \
-  0x10000 firmware-elekstubev1-2.1.1.bin 0x180000 littlefs-2.1.1.bin
+  0x10000 firmware-elekstubev1-2.1.2.bin 0x180000 littlefs-2.1.2.bin
 ```
 
 ## Showing your own text
@@ -217,4 +217,4 @@ The upstream wiki covers the rest:
 
 This code wouldn't exist without the work done by the people on [this reddit discussion](https://www.reddit.com/r/arduino/comments/mq5td9/hacking_the_elekstube_ips_clock_anyone_tried_it/).
 
-Version 2.1.1 of this fork builds on [judge2005's firmware](https://github.com/judge2005/EleksTubeIPS).
+Version 2.1.2 of this fork builds on [judge2005's firmware](https://github.com/judge2005/EleksTubeIPS).
