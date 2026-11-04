@@ -1,5 +1,5 @@
 diff --git a/src/AsyncWiFiManager.cpp b/src/AsyncWiFiManager.cpp
-index e7de952..3bf0bf3 100644
+index e7de952..63179a2 100644
 --- a/src/AsyncWiFiManager.cpp
 +++ b/src/AsyncWiFiManager.cpp
 @@ -17,6 +17,28 @@
@@ -31,6 +31,15 @@ index e7de952..3bf0bf3 100644
  
  AsyncWiFiManagerParameter::AsyncWiFiManagerParameter(const char *custom) {
  	_id = NULL;
+@@ -86,7 +108,7 @@ AsyncWiFiManager::AsyncWiFiManager(AsyncWebServer *server, DNSServer *dns) : ser
+ 
+ void AsyncWiFiManager::_cacheHeads() {
+ 	_wifiSaveHead = FPSTR(WFM_HTTP_HEAD);
+-	_wifiSaveHead.replace("{v}", "Credentials Saved");
++	_wifiSaveHead.replace("{v}", "Saved");
+ 
+ 	_wifiHead = FPSTR(WFM_HTTP_HEAD);
+ 	_wifiHead.replace("{v}", "Config ESP");
 @@ -211,7 +233,7 @@ void AsyncWiFiManager::_setupConfigPortal() {
  		/* Setup web pages: root, wifi config pages, SO captive portal detectors and not found. */
  		rootApHandler = &server->on("/", std::bind(&AsyncWiFiManager::handleRoot, this,std::placeholders::_1)).setFilter(ON_AP_FILTER);
@@ -271,7 +280,7 @@ index e7de952..3bf0bf3 100644
  			pitem.replace("{c}", _params[i]->getCustomHTML());
  		} else {
  			pitem = _params[i]->getCustomHTML();
-@@ -841,6 +892,10 @@ void AsyncWiFiManager::setAPCredentials(const char *ssid, const char *pass) {
+@@ -841,6 +892,14 @@ void AsyncWiFiManager::setAPCredentials(const char *ssid, const char *pass) {
  void AsyncWiFiManager::handleWifiSave(AsyncWebServerRequest *request) {
  	DEBUG_WM(F("WiFi save"));
  
@@ -279,10 +288,23 @@ index e7de952..3bf0bf3 100644
 +		_saveformcallback(request);
 +	}
 +
++	_claim();
++	_lastDisconnectReason = 0;	// Whatever went wrong before, it's about to try something new
++	_release();
++
  	//SAVE/connect here
  	_refresh_info = true;
  	_router_ssid = request->arg("s").c_str();
-@@ -950,11 +1005,11 @@ void AsyncWiFiManager::sendInfo(AsyncResponseStream *response) {
+@@ -898,7 +957,7 @@ void AsyncWiFiManager::handleWifiSave(AsyncWebServerRequest *request) {
+ 	response->print(FPSTR(HTTP_SCRIPT));
+ 	response->print(FPSTR(HTTP_STYLE));
+ 	response->print(_customHeadHTML);
+-	response->print(F("<meta http-equiv=\"refresh\" content=\"15; url=/i\">"));
++	response->print(F("<meta http-equiv=\"refresh\" content=\"8; url=/i\">"));
+ 	response->print(FPSTR(HTTP_HEAD_END));
+ 	response->print(FPSTR(HTTP_SAVED));
+ 	response->print(FPSTR(HTTP_END));
+@@ -950,11 +1009,11 @@ void AsyncWiFiManager::sendInfo(AsyncResponseStream *response) {
  #else
    wifi_config_t conf_current;
    esp_wifi_get_config(WIFI_IF_AP, &conf_current);
@@ -296,7 +318,53 @@ index e7de952..3bf0bf3 100644
  	response->print(F("</dd>"));
  	response->print(F("<dt>Station IP</dt><dd>"));
  	response->print(WiFi.localIP().toString());
-@@ -1096,6 +1151,10 @@ void AsyncWiFiManager::setSaveConfigCallback(void (*func)(void)) {
+@@ -970,20 +1029,38 @@ void AsyncWiFiManager::handleInfo(AsyncWebServerRequest *request) {
+ 
+ 	AsyncResponseStream *response = request->beginResponseStream("text/html");
+ 
++	bool connected = WiFi.isConnected();
++	String network = htmlEscape(_savedSSID());
++	const char *problem = connectProblem();
++
+ 	response->print(_infoHead);
+ 	response->print(FPSTR(HTTP_SCRIPT));
+ 	response->print(FPSTR(HTTP_STYLE));
+ 	response->print(_customHeadHTML);
+-	if (_connect == true) {
+-		response->print(F("<meta http-equiv=\"refresh\" content=\"5; url=/i\">"));
++	if (!connected && network.length() > 0) {
++		response->print(F("<meta http-equiv=\"refresh\" content=\"5; url=/i\">"));	// Until there's good news
+ 	}
+ 	response->print(FPSTR(HTTP_HEAD_END));
+-	response->print(F("<dl>"));
+-	if (_connect == true) {
+-		response->print(F("<dt>Trying to connect</dt><dd>"));
+-		response->print(WiFi.status());
+-		response->print(F("</dd>"));
++	response->print(F("<dl><dt>WiFi</dt><dd>"));
++	if (connected) {
++		response->print(F("Connected to "));
++		response->print(htmlEscape(WiFi.SSID()));
++		response->print(F(" at "));
++		response->print(WiFi.localIP().toString());
++	} else if (network.length() == 0) {
++		response->print(F("No network chosen"));
++	} else if (problem != NULL) {
++		response->print(F("Can't join "));
++		response->print(network);
++		response->print(F(": "));
++		response->print(problem);
++		response->print(F("<br>It keeps trying."));
++	} else {
++		response->print(F("Connecting to "));
++		response->print(network);
++		response->print(F("..."));
+ 	}
++	response->print(F("</dd>"));
+ 
+ 	sendInfo(response);
+ 
+@@ -1096,6 +1173,27 @@ void AsyncWiFiManager::setSaveConfigCallback(void (*func)(void)) {
  	_savecallback = func;
  }
  
@@ -304,11 +372,64 @@ index e7de952..3bf0bf3 100644
 +	_saveformcallback = func;
 +}
 +
++// The network it's been told to join, whether it has joined it or not
++String AsyncWiFiManager::_savedSSID() {
++	if (_router_ssid.length() > 0) {
++		return _router_ssid;
++	}
++#ifdef ESP32
++	wifi_config_t conf;
++	char name[sizeof(conf.sta.ssid) + 1] = "";
++	if (esp_wifi_get_config((wifi_interface_t)ESP_IF_WIFI_STA, &conf) == ESP_OK) {
++		strncpy(name, reinterpret_cast<char*>(conf.sta.ssid), sizeof(conf.sta.ssid));	// Not ended if it's the longest there is
++	}
++	return String(name);
++#else
++	return WiFi.SSID();
++#endif
++}
++
  #ifdef ESP8266
  void AsyncWiFiManager::onStationIP(const WiFiEventStationModeGotIP& evt) {
  	_claim();
+@@ -1130,6 +1228,7 @@ void AsyncWiFiManager::onConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
+ 	DEBUG_WM(F("Connected"));
+ 	_claim();
+ 	_connectRetryTimeout = 0;
++	_lastDisconnectReason = 0;
+ 	_release();
+ }
+ 
+@@ -1138,8 +1237,27 @@ void AsyncWiFiManager::onDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
+ 	_claim();
+ 	_lastConnectTime = millis();
+ 	_connectRetryTimeout = 10000;	// ms
++	if (info.wifi_sta_disconnected.reason != WIFI_REASON_ASSOC_LEAVE) {	// That's this library giving up on a try
++		_lastDisconnectReason = info.wifi_sta_disconnected.reason;
++	}
+ 	_release();
+ }
++
++const char* AsyncWiFiManager::connectProblem() {
++	switch (_lastDisconnectReason) {
++		case 0:
++			return NULL;
++		case WIFI_REASON_NO_AP_FOUND:
++			return "Network not found";
++		case WIFI_REASON_AUTH_FAIL:
++		case WIFI_REASON_MIC_FAILURE:
++		case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
++		case WIFI_REASON_HANDSHAKE_TIMEOUT:
++			return "Wrong password?";
++		default:
++			return "Can't connect";
++	}
++}
+ #endif
+ 
+ //start up connected callback
 diff --git a/src/AsyncWiFiManager.h b/src/AsyncWiFiManager.h
-index b384898..32221c4 100644
+index b384898..aa42911 100644
 --- a/src/AsyncWiFiManager.h
 +++ b/src/AsyncWiFiManager.h
 @@ -37,15 +37,15 @@ const char WFM_HTTP_HEAD[] PROGMEM
@@ -330,34 +451,49 @@ index b384898..32221c4 100644
  const char HTTP_FORM_PARAM[] PROGMEM
  		= "<br/><label for='{i}'>{p}</label><input id='{i}' name='{n}' length={l} value='{v}' {c}>";
  const char HTTP_FORM_END[] PROGMEM
-@@ -53,7 +53,7 @@ const char HTTP_FORM_END[] PROGMEM
+@@ -53,9 +53,9 @@ const char HTTP_FORM_END[] PROGMEM
  const char HTTP_SCAN_LINK[] PROGMEM
  		= "<br/><div class=\"c\"><a href=\"/wifi?static={s}&scan=1\"><button>Scan</button></a></div>";
  const char HTTP_SCAN_REFRESH[] PROGMEM
 -		= "<meta http-equiv=\"refresh\" content=\"5; url=/wifi?static={s}\">";
 +		= "<meta http-equiv=\"refresh\" content=\"2; url=/wifi?static={s}\">";
  const char HTTP_SAVED[] PROGMEM
- 		= "<div>Credentials Saved<br />Trying to connect ESP to network.<br />If it fails reconnect to AP to try again</div>";
+-		= "<div>Credentials Saved<br />Trying to connect ESP to network.<br />If it fails reconnect to AP to try again</div>";
++		= "<div>Saved. The clock is connecting to this network.<br />When it has, it shows its IP address on its displays, and the access point closes 30 seconds later.<br />If it can't, its displays and the <a href='/i'>Info</a> page say why, and the access point stays on so you can try again.</div>";
  const char HTTP_END[] PROGMEM = "</div></body></html>";
-@@ -139,6 +139,9 @@ public:
+ 
+ #define WIFI_MANAGER_MAX_PARAMS 10
+@@ -139,6 +139,12 @@ public:
  	void startConfigPortal(const char* ssid, const char* pass);
  	bool isAP();
  
++	// Why the last try at joining a network failed, or NULL. For showing to people. It's a guess when it's
++	// the password, since a router usually just stops answering.
++	const char* connectProblem();
 +	// Called with the portal's form when it's saved, before anything in it is used
 +	void setSaveFormCallback(void (*func)(AsyncWebServerRequest*));
 +
  	void dumpInfo();
  
  private:
-@@ -171,6 +174,7 @@ private:
+@@ -149,6 +155,7 @@ private:
+ 	void _setupConfigPortal();
+ 	wl_status_t _connectWiFi();
+ 	void _scanNetworks();
++	String _savedSSID();
+ 	bool _start();
+ 	void _claim();
+ 	void _release();
+@@ -171,6 +178,8 @@ private:
  	bool _isAP = false;				// True if AP is enabled
  	int _loop_ap_state = -1;
  	bool _loop_scan = false;
 +	bool _scanFailed = false;		// The last scan failed, so the list is from an earlier one
++	uint8_t _lastDisconnectReason = 0;	// Why the last connection failed. 0 once one works.
  	bool _dnsRunning = false;		// Make calls to dns server idempotent
  	String _router_ssid;
  	String _router_pass;
-@@ -245,6 +249,7 @@ private:
+@@ -245,6 +254,7 @@ private:
  	void (*_apcallback)(AsyncWiFiManager*) = NULL;	// Call when AP mode state changes
  
  	void (*_savecallback)(void) = NULL;				// Call when ConfigPortal saves data
