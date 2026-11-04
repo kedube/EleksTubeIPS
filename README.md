@@ -91,6 +91,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 * **The Network page's WiFi AP switch follows the access point.** It was only set when the page loaded, so it went on saying On after the access point closed by itself.
 * **An access point left on closes by itself** once nobody has been on it for 10 minutes, if the clock is on your network. It kept the weather from updating, and its name and password on the displays, until the next restart or Wi-Fi reconnect.
 * **A clock with no network saved opens its access point without waiting, and one with a network saved waits 10 seconds instead of 5.** When the wait ran out, opening the access point cancelled the connection and started it again, so a slow router got the access point at every start.
+* The Wi-Fi portal no longer says "AsyncWiFiManager" or "ESP", and its Info page has lost the rows that said "N/A for ESP32". Tapping **Show Password**'s label now works.
 * **Installing only the firmware updates the settings pages too.** They're now built into the firmware as well as the filesystem image, so new settings appear without a full install, which would replace your uploaded images.
 * A forecast that fails to download or arrives incomplete is retried after 3 minutes instead of 15, and whatever did arrive is shown ([upstream issue #92](https://github.com/judge2005/EleksTubeIPS/issues/92)).
 * A brightness change from Home Assistant now redraws the weather display immediately.
