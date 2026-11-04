@@ -88,6 +88,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 * **The Wi-Fi portal no longer puts your Wi-Fi password in a URL**, where it stayed in the browser's history. Its form now uses POST.
 * **Network names are no longer treated as HTML in the Wi-Fi portal.** A nearby network could have a name that ran a script in the portal, where the web UI login doesn't apply. Names with `<` or `&` in them also showed wrongly, and choosing one could fill in the wrong name.
 * **Hostnames are checked.** The Wi-Fi portal and the Network page took anything, including nothing, and a `"` stopped the Network page working. A hostname can now have letters, digits and hyphens, without a hyphen at either end. Anything else is refused and the clock keeps the name it has.
+* **The Network page's WiFi AP switch follows the access point.** It was only set when the page loaded, so it went on saying On after the access point closed by itself.
 * **Installing only the firmware updates the settings pages too.** They're now built into the firmware as well as the filesystem image, so new settings appear without a full install, which would replace your uploaded images.
 * A forecast that fails to download or arrives incomplete is retried after 3 minutes instead of 15, and whatever did arrive is shown ([upstream issue #92](https://github.com/judge2005/EleksTubeIPS/issues/92)).
 * A brightness change from Home Assistant now redraws the weather display immediately.
