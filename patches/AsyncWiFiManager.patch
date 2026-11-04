@@ -1,8 +1,8 @@
 diff --git a/src/AsyncWiFiManager.cpp b/src/AsyncWiFiManager.cpp
-index e7de952..36cfc13 100644
+index e7de952..4ba23a2 100644
 --- a/src/AsyncWiFiManager.cpp
 +++ b/src/AsyncWiFiManager.cpp
-@@ -17,6 +17,10 @@
+@@ -17,6 +17,28 @@
  #else
  #include <core_version.h>
  #endif
@@ -10,10 +10,28 @@ index e7de952..36cfc13 100644
 +
 +// Looking for a network takes the radio away from the access point, so it's done less while someone is on it
 +static const unsigned long BUSY_AP_RETRY_MS = 60000;
++
++// Puts text in a page as itself rather than as HTML. Network names can have anything in them.
++static String htmlEscape(const String &text) {
++	String escaped;
++	escaped.reserve(text.length());
++	for (unsigned int i = 0; i < text.length(); i++) {
++		char c = text.charAt(i);
++		switch (c) {
++			case '&': escaped += F("&amp;"); break;
++			case '<': escaped += F("&lt;"); break;
++			case '>': escaped += F("&gt;"); break;
++			case '"': escaped += F("&quot;"); break;
++			case '\'': escaped += F("&#39;"); break;
++			default: escaped += c; break;
++		}
++	}
++	return escaped;
++}
  
  AsyncWiFiManagerParameter::AsyncWiFiManagerParameter(const char *custom) {
  	_id = NULL;
-@@ -393,13 +397,18 @@ void AsyncWiFiManager::loop() {
+@@ -393,13 +415,18 @@ void AsyncWiFiManager::loop() {
  	if (_connectRetryTimeout > 0 || _loop_ap_state >= 0 || _loop_scan || _loop_call_connected) {
  		if (_connectRetryTimeout > 0) {
  			if (now - _lastConnectTime > _connectRetryTimeout) {
@@ -36,7 +54,7 @@ index e7de952..36cfc13 100644
  			} else {
  				_release();
  			}
-@@ -438,7 +447,9 @@ void AsyncWiFiManager::loop() {
+@@ -438,7 +465,9 @@ void AsyncWiFiManager::loop() {
  		if (_loop_scan) {
  			_release();
  			_scanNetworks();
@@ -46,7 +64,7 @@ index e7de952..36cfc13 100644
  		} else {
  			_release();
  		}
-@@ -449,7 +460,11 @@ void AsyncWiFiManager::loop() {
+@@ -449,7 +478,11 @@ void AsyncWiFiManager::loop() {
  
  void AsyncWiFiManager::sendNetworkList(AsyncResponseStream *response) {
  	String pager;
@@ -58,7 +76,16 @@ index e7de952..36cfc13 100644
  	for (int i = 0; i < wifiSSIDCount; i++) {
  		if (wifiSSIDs[i].duplicate == true) {
  			continue; // skip dups
-@@ -475,6 +490,7 @@ void AsyncWiFiManager::sendNetworkList(AsyncResponseStream *response) {
+@@ -466,7 +499,7 @@ void AsyncWiFiManager::sendNetworkList(AsyncResponseStream *response) {
+ #endif
+ 				locked = 'l';
+ 			}
+-			response->printf(HTTP_ITEM, wifiSSIDs[i].SSID.c_str(), locked, quality);
++			response->printf(HTTP_ITEM, htmlEscape(wifiSSIDs[i].SSID).c_str(), locked, quality);
+ 		} else {
+ 			DEBUG_WM(F("Skipping due to quality"));
+ 		}
+@@ -475,6 +508,7 @@ void AsyncWiFiManager::sendNetworkList(AsyncResponseStream *response) {
  	if (wifiSSIDCount == 0) {
  		response->print(F("No networks found"));
  	}
@@ -66,7 +93,7 @@ index e7de952..36cfc13 100644
  }
  
  void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
-@@ -491,22 +507,23 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
+@@ -491,22 +525,23 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
  		DEBUG_WM(String("Found ") + n + " SSIDs");
  	}
  
@@ -100,7 +127,7 @@ index e7de952..36cfc13 100644
  #endif
  		}
  
-@@ -515,8 +532,8 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
+@@ -515,8 +550,8 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
  		// old sort
  		for (int i = 0; i < n; i++) {
  			for (int j = i + 1; j < n; j++) {
@@ -111,7 +138,7 @@ index e7de952..36cfc13 100644
  				}
  			}
  		}
-@@ -525,20 +542,33 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
+@@ -525,20 +560,33 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
  		if (_removeDuplicateAPs) {
  			String cssid;
  			for (int i = 0; i < n; i++) {
@@ -150,7 +177,7 @@ index e7de952..36cfc13 100644
  }
  
  void AsyncWiFiManager::startConfigPortal() {
-@@ -562,6 +592,11 @@ void AsyncWiFiManager::stopConfigPortal(int timeoutMs) {
+@@ -562,6 +610,11 @@ void AsyncWiFiManager::stopConfigPortal(int timeoutMs) {
  }
  
  void AsyncWiFiManager::_scanNetworks() {
@@ -162,7 +189,7 @@ index e7de952..36cfc13 100644
  	wifi_ssid_count_t n = WiFi.scanNetworks(false);
  	copySSIDInfo(n);
  }
-@@ -576,11 +611,6 @@ bool AsyncWiFiManager::_startConfigPortal() {
+@@ -576,11 +629,6 @@ bool AsyncWiFiManager::_startConfigPortal() {
  		// For ESP8266, need to save the current SSID and password
  //		_router_ssid = WiFi.SSID();
  //		_router_pass = WiFi.psk();
@@ -174,7 +201,7 @@ index e7de952..36cfc13 100644
  #endif
  
  		_scanNetworks();
-@@ -615,12 +645,13 @@ void AsyncWiFiManager::_stopConfigPortal() {
+@@ -615,12 +663,13 @@ void AsyncWiFiManager::_stopConfigPortal() {
  		}
  	}
  
@@ -193,11 +220,13 @@ index e7de952..36cfc13 100644
  
  	if (_portalSet){
  		_portalSet = false;
-@@ -704,13 +735,17 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
+@@ -703,14 +752,18 @@ static String oneString("1");
+ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
  	DEBUG_WM(F("Handle wifi"));
  
- 	String useStatic = request->arg("static");
+-	String useStatic = request->arg("static");
 -	_loop_scan = request->hasParam("scan");
++	String useStatic = request->arg("static") == oneString ? oneString : String("0");
 +
 +	_claim();
 +	if (request->hasParam("scan")) {
@@ -215,7 +244,7 @@ index e7de952..36cfc13 100644
  		response->print(_wifiHead);
  		response->print(FPSTR(HTTP_STYLE));
  		response->print(_customHeadHTML);
-@@ -725,8 +760,6 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
+@@ -725,8 +778,6 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
  		return;
  	}
  
@@ -224,10 +253,49 @@ index e7de952..36cfc13 100644
  	response->print(_wifiHead);
  	response->print(FPSTR(HTTP_SCRIPT));
  	response->print(FPSTR(HTTP_STYLE));
+@@ -752,7 +803,7 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
+ 			pitem.replace("{p}", _params[i]->getPlaceholder());
+ 			snprintf(parLength, 2, "%d", _params[i]->getValueLength());
+ 			pitem.replace("{l}", parLength);
+-			pitem.replace("{v}", _params[i]->getValue());
++			pitem.replace("{v}", htmlEscape(_params[i]->getValue()));
+ 			pitem.replace("{c}", _params[i]->getCustomHTML());
+ 		} else {
+ 			pitem = _params[i]->getCustomHTML();
+@@ -950,11 +1001,11 @@ void AsyncWiFiManager::sendInfo(AsyncResponseStream *response) {
+ #else
+   wifi_config_t conf_current;
+   esp_wifi_get_config(WIFI_IF_AP, &conf_current);
+-  response->print(String(reinterpret_cast<char*>(conf_current.ap.ssid)));
++  response->print(htmlEscape(String(reinterpret_cast<char*>(conf_current.ap.ssid))));
+ #endif
+ 	response->print(F("</dd>"));
+ 	response->print(F("<dt>Network SSID</dt><dd>"));
+-	response->print(WiFi.SSID());
++	response->print(htmlEscape(WiFi.SSID()));
+ 	response->print(F("</dd>"));
+ 	response->print(F("<dt>Station IP</dt><dd>"));
+ 	response->print(WiFi.localIP().toString());
 diff --git a/src/AsyncWiFiManager.h b/src/AsyncWiFiManager.h
-index b384898..a68bac0 100644
+index b384898..caaaf3d 100644
 --- a/src/AsyncWiFiManager.h
 +++ b/src/AsyncWiFiManager.h
+@@ -37,13 +37,13 @@ const char WFM_HTTP_HEAD[] PROGMEM
+ const char HTTP_STYLE[] PROGMEM
+ 		= "<style>.c{text-align: center;} div,input{padding:5px;font-size:1em;} input{width:95%;} body{text-align: center;font-family:verdana;} button{border:0;border-radius:0.3rem;background-color:#1fa3ec;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;} .q{float: right;width: 64px;text-align: right;} .l{background: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAALVBMVEX///8EBwfBwsLw8PAzNjaCg4NTVVUjJiZDRUUUFxdiZGSho6OSk5Pg4eFydHTCjaf3AAAAZElEQVQ4je2NSw7AIAhEBamKn97/uMXEGBvozkWb9C2Zx4xzWykBhFAeYp9gkLyZE0zIMno9n4g19hmdY39scwqVkOXaxph0ZCXQcqxSpgQpONa59wkRDOL93eAXvimwlbPbwwVAegLS1HGfZAAAAABJRU5ErkJggg==\") no-repeat left center;background-size: 1em;}</style>";
+ const char HTTP_SCRIPT[] PROGMEM
+-		= "<script>function c(l){document.getElementById('s').value=l.innerText||l.textContent;document.getElementById('p').focus();};function t(){var x=document.getElementById('p');if(x.type === 'password'){x.type='text';}else{x.type='password';}}</script>";
++		= "<script>function c(l){document.getElementById('s').value=l.textContent;document.getElementById('p').focus();};function t(){var x=document.getElementById('p');if(x.type === 'password'){x.type='text';}else{x.type='password';}}</script>";
+ const char HTTP_HEAD_END[] PROGMEM
+ 		= "</head><body><div style='text-align:left;display:inline-block;min-width:260px;'>";
+ const char HTTP_PORTAL_OPTIONS[] PROGMEM
+ 		= "<a href=\"/wifi?static=0\"><button>Configure WiFi</button></a><p/><a href=\"/wifi?static=1\"><button>Configure Static WiFi</button></a><p/><a href=\"/i\"><button>Info</button></a><p/><form action=\"/r\" method=\"post\"><button>Reset</button></form>";
+ const char HTTP_ITEM[]
+-		= "<div><a href='#p' onclick='c(this)'>%s</a>&nbsp;<span class='q %c'>%d%</span></div>";
++		= "<div><a href='#p' onclick='c(this)'>%s</a>&nbsp;<span class='q %c'>%d%%</span></div>";
+ const char HTTP_FORM_START[] PROGMEM
+ 		= "<form method='get' action='wifisave'><input id='s' name='s' autocapitalize='none' length=32 placeholder='SSID'><br/><input id='p' name='p' length=64 type='password' placeholder='password'><p><input type='checkbox' style='width:auto' onclick='t()'><label for='p'>Show Password</label><br>";
+ const char HTTP_FORM_PARAM[] PROGMEM
 @@ -53,7 +53,7 @@ const char HTTP_FORM_END[] PROGMEM
  const char HTTP_SCAN_LINK[] PROGMEM
  		= "<br/><div class=\"c\"><a href=\"/wifi?static={s}&scan=1\"><button>Scan</button></a></div>";
