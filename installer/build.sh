@@ -4,7 +4,8 @@
 #
 # Usage: installer/build.sh <release tag> <output directory>
 #
-# Needs gh, signed in or with GH_TOKEN set, and jq.
+# Needs gh, signed in or with GH_TOKEN set, and jq. The links on the page go to
+# this repository, so they're right wherever it's built.
 
 set -euo pipefail
 
@@ -17,6 +18,7 @@ tag=$1
 out=$2
 version=${tag#v}
 root=$(cd "$(dirname "$0")/.." && pwd)
+repository=${GITHUB_REPOSITORY:-$(cd "$root" && gh repo view --json nameWithOwner --jq .nameWithOwner)}
 
 rm -rf "$out"
 mkdir -p "$out/firmware"
@@ -37,6 +39,7 @@ for src in "$root"/web/esp-web-tools-manifest-*.json; do
     done
 done
 
-sed 's/\$version\$/'"$version"'/g' "$root/installer/index.html" > "$out/index.html"
+sed -e 's/\$version\$/'"$version"'/g' -e 's|\$repository\$|'"$repository"'|g' \
+    "$root/installer/index.html" > "$out/index.html"
 
 echo "Built the installer for $tag in $out"
