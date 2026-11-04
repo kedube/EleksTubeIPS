@@ -1,5 +1,5 @@
 diff --git a/src/AsyncWiFiManager.cpp b/src/AsyncWiFiManager.cpp
-index e7de952..63179a2 100644
+index e7de952..83987db 100644
 --- a/src/AsyncWiFiManager.cpp
 +++ b/src/AsyncWiFiManager.cpp
 @@ -17,6 +17,28 @@
@@ -31,6 +31,15 @@ index e7de952..63179a2 100644
  
  AsyncWiFiManagerParameter::AsyncWiFiManagerParameter(const char *custom) {
  	_id = NULL;
+@@ -40,7 +62,7 @@ void AsyncWiFiManagerParameter::init(const char *id, const char *placeholder, co
+ 	_placeholder = placeholder;
+ 	_length = length;
+ 	_value = new char[length + 1];
+-	for (int i = 0; i < length; i++) {
++	for (int i = 0; i <= length; i++) {
+ 		_value[i] = 0;
+ 	}
+ 	if (defaultValue != NULL) {
 @@ -86,7 +108,7 @@ AsyncWiFiManager::AsyncWiFiManager(AsyncWebServer *server, DNSServer *dns) : ser
  
  void AsyncWiFiManager::_cacheHeads() {
@@ -271,9 +280,21 @@ index e7de952..63179a2 100644
  	response->print(_wifiHead);
  	response->print(FPSTR(HTTP_SCRIPT));
  	response->print(FPSTR(HTTP_STYLE));
-@@ -752,7 +803,7 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
+@@ -738,7 +789,7 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
+ 	response->print("<br/>");
+ 
+ 	response->print(FPSTR(HTTP_FORM_START));
+-	char parLength[2];
++	char parLength[4];
+ 	// add the extra parameters to the form
+ 	for (int i = 0; i < _paramsCount; i++) {
+ 		if (_params[i] == NULL) {
+@@ -750,9 +801,9 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
+ 			pitem.replace("{i}", _params[i]->getID());
+ 			pitem.replace("{n}", _params[i]->getID());
  			pitem.replace("{p}", _params[i]->getPlaceholder());
- 			snprintf(parLength, 2, "%d", _params[i]->getValueLength());
+-			snprintf(parLength, 2, "%d", _params[i]->getValueLength());
++			snprintf(parLength, sizeof(parLength), "%d", _params[i]->getValueLength());
  			pitem.replace("{l}", parLength);
 -			pitem.replace("{v}", _params[i]->getValue());
 +			pitem.replace("{v}", htmlEscape(_params[i]->getValue()));
@@ -295,6 +316,15 @@ index e7de952..63179a2 100644
  	//SAVE/connect here
  	_refresh_info = true;
  	_router_ssid = request->arg("s").c_str();
+@@ -854,7 +913,7 @@ void AsyncWiFiManager::handleWifiSave(AsyncWebServerRequest *request) {
+ 		//read parameter
+ 		String value = request->arg(_params[i]->getID()).c_str();
+ 		//store it in array
+-		value.toCharArray(_params[i]->_value, _params[i]->_length);
++		value.toCharArray(_params[i]->_value, _params[i]->_length + 1);
+ 		DEBUG_WM(F("Parameter"));
+ 		DEBUG_WM(_params[i]->getID());
+ 		DEBUG_WM(value);
 @@ -898,7 +957,7 @@ void AsyncWiFiManager::handleWifiSave(AsyncWebServerRequest *request) {
  	response->print(FPSTR(HTTP_SCRIPT));
  	response->print(FPSTR(HTTP_STYLE));
@@ -429,10 +459,10 @@ index e7de952..63179a2 100644
  
  //start up connected callback
 diff --git a/src/AsyncWiFiManager.h b/src/AsyncWiFiManager.h
-index b384898..aa42911 100644
+index b384898..b5fff8c 100644
 --- a/src/AsyncWiFiManager.h
 +++ b/src/AsyncWiFiManager.h
-@@ -37,15 +37,15 @@ const char WFM_HTTP_HEAD[] PROGMEM
+@@ -37,25 +37,25 @@ const char WFM_HTTP_HEAD[] PROGMEM
  const char HTTP_STYLE[] PROGMEM
  		= "<style>.c{text-align: center;} div,input{padding:5px;font-size:1em;} input{width:95%;} body{text-align: center;font-family:verdana;} button{border:0;border-radius:0.3rem;background-color:#1fa3ec;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;} .q{float: right;width: 64px;text-align: right;} .l{background: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAALVBMVEX///8EBwfBwsLw8PAzNjaCg4NTVVUjJiZDRUUUFxdiZGSho6OSk5Pg4eFydHTCjaf3AAAAZElEQVQ4je2NSw7AIAhEBamKn97/uMXEGBvozkWb9C2Zx4xzWykBhFAeYp9gkLyZE0zIMno9n4g19hmdY39scwqVkOXaxph0ZCXQcqxSpgQpONa59wkRDOL93eAXvimwlbPbwwVAegLS1HGfZAAAAABJRU5ErkJggg==\") no-repeat left center;background-size: 1em;}</style>";
  const char HTTP_SCRIPT[] PROGMEM
@@ -449,9 +479,10 @@ index b384898..aa42911 100644
 -		= "<form method='get' action='wifisave'><input id='s' name='s' autocapitalize='none' length=32 placeholder='SSID'><br/><input id='p' name='p' length=64 type='password' placeholder='password'><p><input type='checkbox' style='width:auto' onclick='t()'><label for='p'>Show Password</label><br>";
 +		= "<form method='post' action='wifisave'><input id='s' name='s' autocapitalize='none' length=32 placeholder='SSID'><br/><input id='p' name='p' length=64 type='password' placeholder='password'><p><input type='checkbox' style='width:auto' onclick='t()'><label for='p'>Show Password</label><br>";
  const char HTTP_FORM_PARAM[] PROGMEM
- 		= "<br/><label for='{i}'>{p}</label><input id='{i}' name='{n}' length={l} value='{v}' {c}>";
+-		= "<br/><label for='{i}'>{p}</label><input id='{i}' name='{n}' length={l} value='{v}' {c}>";
++		= "<br/><label for='{i}'>{p}</label><input id='{i}' name='{n}' maxlength={l} value='{v}' {c}>";
  const char HTTP_FORM_END[] PROGMEM
-@@ -53,9 +53,9 @@ const char HTTP_FORM_END[] PROGMEM
+ 		= "<br/><button type='submit'>save</button></form>";
  const char HTTP_SCAN_LINK[] PROGMEM
  		= "<br/><div class=\"c\"><a href=\"/wifi?static={s}&scan=1\"><button>Scan</button></a></div>";
  const char HTTP_SCAN_REFRESH[] PROGMEM
