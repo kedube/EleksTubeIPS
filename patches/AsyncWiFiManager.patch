@@ -1,16 +1,42 @@
 diff --git a/src/AsyncWiFiManager.cpp b/src/AsyncWiFiManager.cpp
-index e7de952..e8425af 100644
+index e7de952..36cfc13 100644
 --- a/src/AsyncWiFiManager.cpp
 +++ b/src/AsyncWiFiManager.cpp
-@@ -17,6 +17,7 @@
+@@ -17,6 +17,10 @@
  #else
  #include <core_version.h>
  #endif
 +#include <new>
++
++// Looking for a network takes the radio away from the access point, so it's done less while someone is on it
++static const unsigned long BUSY_AP_RETRY_MS = 60000;
  
  AsyncWiFiManagerParameter::AsyncWiFiManagerParameter(const char *custom) {
  	_id = NULL;
-@@ -438,7 +439,9 @@ void AsyncWiFiManager::loop() {
+@@ -393,13 +397,18 @@ void AsyncWiFiManager::loop() {
+ 	if (_connectRetryTimeout > 0 || _loop_ap_state >= 0 || _loop_scan || _loop_call_connected) {
+ 		if (_connectRetryTimeout > 0) {
+ 			if (now - _lastConnectTime > _connectRetryTimeout) {
+-				DEBUG_WM(_connectRetryTimeout);
+-				_lastConnectTime = now;
++				bool early = now - _lastConnectTime <= BUSY_AP_RETRY_MS;
+ 				_release();
++				if (!early || !_isAP || WiFi.softAPgetStationNum() == 0) {
++					DEBUG_WM(_connectRetryTimeout);
++					_claim();
++					_lastConnectTime = now;
++					_release();
+ #ifdef ESP32
+-				WiFi.disconnect();
++					WiFi.disconnect();
+ #endif
+-				_connectWiFi();
++					_connectWiFi();
++				}
+ 			} else {
+ 				_release();
+ 			}
+@@ -438,7 +447,9 @@ void AsyncWiFiManager::loop() {
  		if (_loop_scan) {
  			_release();
  			_scanNetworks();
@@ -20,7 +46,7 @@ index e7de952..e8425af 100644
  		} else {
  			_release();
  		}
-@@ -449,7 +452,11 @@ void AsyncWiFiManager::loop() {
+@@ -449,7 +460,11 @@ void AsyncWiFiManager::loop() {
  
  void AsyncWiFiManager::sendNetworkList(AsyncResponseStream *response) {
  	String pager;
@@ -32,7 +58,7 @@ index e7de952..e8425af 100644
  	for (int i = 0; i < wifiSSIDCount; i++) {
  		if (wifiSSIDs[i].duplicate == true) {
  			continue; // skip dups
-@@ -475,6 +482,7 @@ void AsyncWiFiManager::sendNetworkList(AsyncResponseStream *response) {
+@@ -475,6 +490,7 @@ void AsyncWiFiManager::sendNetworkList(AsyncResponseStream *response) {
  	if (wifiSSIDCount == 0) {
  		response->print(F("No networks found"));
  	}
@@ -40,7 +66,7 @@ index e7de952..e8425af 100644
  }
  
  void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
-@@ -491,22 +499,23 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
+@@ -491,22 +507,23 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
  		DEBUG_WM(String("Found ") + n + " SSIDs");
  	}
  
@@ -74,7 +100,7 @@ index e7de952..e8425af 100644
  #endif
  		}
  
-@@ -515,8 +524,8 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
+@@ -515,8 +532,8 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
  		// old sort
  		for (int i = 0; i < n; i++) {
  			for (int j = i + 1; j < n; j++) {
@@ -85,7 +111,7 @@ index e7de952..e8425af 100644
  				}
  			}
  		}
-@@ -525,20 +534,33 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
+@@ -525,20 +542,33 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
  		if (_removeDuplicateAPs) {
  			String cssid;
  			for (int i = 0; i < n; i++) {
@@ -124,7 +150,7 @@ index e7de952..e8425af 100644
  }
  
  void AsyncWiFiManager::startConfigPortal() {
-@@ -562,6 +584,11 @@ void AsyncWiFiManager::stopConfigPortal(int timeoutMs) {
+@@ -562,6 +592,11 @@ void AsyncWiFiManager::stopConfigPortal(int timeoutMs) {
  }
  
  void AsyncWiFiManager::_scanNetworks() {
@@ -136,7 +162,7 @@ index e7de952..e8425af 100644
  	wifi_ssid_count_t n = WiFi.scanNetworks(false);
  	copySSIDInfo(n);
  }
-@@ -576,11 +603,6 @@ bool AsyncWiFiManager::_startConfigPortal() {
+@@ -576,11 +611,6 @@ bool AsyncWiFiManager::_startConfigPortal() {
  		// For ESP8266, need to save the current SSID and password
  //		_router_ssid = WiFi.SSID();
  //		_router_pass = WiFi.psk();
@@ -148,7 +174,7 @@ index e7de952..e8425af 100644
  #endif
  
  		_scanNetworks();
-@@ -615,12 +637,13 @@ void AsyncWiFiManager::_stopConfigPortal() {
+@@ -615,12 +645,13 @@ void AsyncWiFiManager::_stopConfigPortal() {
  		}
  	}
  
@@ -167,7 +193,7 @@ index e7de952..e8425af 100644
  
  	if (_portalSet){
  		_portalSet = false;
-@@ -704,13 +727,17 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
+@@ -704,13 +735,17 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
  	DEBUG_WM(F("Handle wifi"));
  
  	String useStatic = request->arg("static");
@@ -189,7 +215,7 @@ index e7de952..e8425af 100644
  		response->print(_wifiHead);
  		response->print(FPSTR(HTTP_STYLE));
  		response->print(_customHeadHTML);
-@@ -725,8 +752,6 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
+@@ -725,8 +760,6 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
  		return;
  	}
  
