@@ -78,6 +78,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 ### Building
 
 * The firmware builds without compiler warnings (upstream printed about 960 lines of them), and the web UI build installs far fewer npm packages.
+* **A build gets the same tools each time.** `web/package-lock.json` was ignored, so with `*` as the version of most packages, each build took whatever was newest. It's now committed, and CI installs exactly what it says, without running anything from the packages. The one library with no version is pinned too.
 * The build patches four libraries with the fixes above, from `patches/`: the web server, AsyncTCP, ESP32-targz, which unpacks images, and AsyncWiFiManager, which runs the Wi-Fi portal. If a library changes so that its patch no longer applies, the build stops and says so.
 
 ### Other fixes
