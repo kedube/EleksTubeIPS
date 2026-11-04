@@ -20,7 +20,7 @@ Pushing a tag builds the release. Publishing the draft it makes releases it.
    git push origin HEAD v2.1.6
    ```
 
-3. The [Release workflow](../.github/workflows/release.yml) checks that the tag matches `version.py`, then builds every clock from scratch. After about 10 minutes there's a draft on the repository's Releases page, with all the files. Only people who can push to the repository can see it.
+3. The [Release workflow](../.github/workflows/release.yml) checks that the tag matches `version.py`, then builds every clock from scratch. A few minutes later there's a draft on the repository's Releases page, with all the files. Only people who can push to the repository can see it.
 
 4. Try it. Download the firmware for your clock from the draft and flash it:
 
