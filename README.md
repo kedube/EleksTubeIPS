@@ -50,6 +50,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 ### Stability
 
 * **The clock no longer freezes after changing clock faces.** Unpacking a face took 36 KB of the clock's memory, and with the web UI busy at the same time, the ESP32's Wi-Fi driver could jam. It went on receiving but sent nothing, so the clock answered no ping, web page, weather or MQTT until it was restarted, though it kept running and stayed connected. Unpacking now borrows the displays' drawing buffer, as the weather fetch does. If Wi-Fi still can't send anything for 15 seconds, the clock reconnects it, which clears the jam in a couple of seconds.
+* **Turning the access point back on no longer restarts the clock.** A typo in the Wi-Fi portal library, `==` for `=`, left it holding on to its list of networks after freeing it when the access point closed. Turning **WiFi AP** on, off and on again crashed the clock every time. The same code ran on any later Wi-Fi reconnect, so once the access point had been on, as it is during first-time setup, a reconnect could restart the clock too.
 * **Drawing and unpacking images run on the ESP32's other core, away from Wi-Fi.** Under heavy web traffic, unpacking a face kept Wi-Fi's core so busy that the task watchdog restarted the clock.
 * Unpacking a face, or fetching the weather, no longer aborts the clock when memory is short or in pieces too small. The unpacking library now reports it, and the weather is tried again 3 minutes later.
 * **Several browsers loading the web UI at once no longer jam Wi-Fi.** Sending the web UI's 147 KB page takes several KB of memory for the few seconds it lasts. With four clients loading it nonstop, Wi-Fi jammed about once a minute. The clock now sends at most two at once, and asks any more to try again a second later.
@@ -77,7 +78,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 ### Building
 
 * The firmware builds without compiler warnings (upstream printed about 960 lines of them), and the web UI build installs far fewer npm packages.
-* The build patches three libraries with the fixes above, from `patches/`: the web server, AsyncTCP, and ESP32-targz, which unpacks images. If a library changes so that its patch no longer applies, the build stops and says so.
+* The build patches four libraries with the fixes above, from `patches/`: the web server, AsyncTCP, ESP32-targz, which unpacks images, and AsyncWiFiManager, which runs the Wi-Fi portal. If a library changes so that its patch no longer applies, the build stops and says so.
 
 ### Other fixes
 

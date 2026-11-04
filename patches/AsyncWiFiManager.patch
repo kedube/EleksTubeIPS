@@ -1,0 +1,22 @@
+diff --git a/src/AsyncWiFiManager.cpp b/src/AsyncWiFiManager.cpp
+index e7de952..843b0c6 100644
+--- a/src/AsyncWiFiManager.cpp
++++ b/src/AsyncWiFiManager.cpp
+@@ -615,12 +615,12 @@ void AsyncWiFiManager::_stopConfigPortal() {
+ 		}
+ 	}
+ 
+-	if (wifiSSIDs != NULL) {
+-		delete[] wifiSSIDs;
+-		wifiSSIDs == NULL;
+-	}
+-
++	_claim();
++	WiFiResult *networks = wifiSSIDs;
++	wifiSSIDs = NULL;
+ 	wifiSSIDCount = 0;
++	_release();
++	delete[] networks;
+ 
+ 	if (_portalSet){
+ 		_portalSet = false;

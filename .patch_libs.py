@@ -18,6 +18,9 @@ PATCHES = {
     # A web connection that came in when there wasn't the memory for it was freed, then used by lwIP,
     # which stopped the program with "tcp_receive: wrong state"
     "AsyncTCP": "patches/AsyncTCP.patch",
+    # Closing the Wi-Fi portal's access point left a freed pointer behind, so a later scan or
+    # reconnect freed it again and restarted the clock.
+    "AsyncWiFiManager": "patches/AsyncWiFiManager.patch",
 }
 
 def git(library, *args):
