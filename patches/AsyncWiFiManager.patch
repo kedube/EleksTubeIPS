@@ -1,8 +1,154 @@
 diff --git a/src/AsyncWiFiManager.cpp b/src/AsyncWiFiManager.cpp
-index e7de952..843b0c6 100644
+index e7de952..e8425af 100644
 --- a/src/AsyncWiFiManager.cpp
 +++ b/src/AsyncWiFiManager.cpp
-@@ -615,12 +615,12 @@ void AsyncWiFiManager::_stopConfigPortal() {
+@@ -17,6 +17,7 @@
+ #else
+ #include <core_version.h>
+ #endif
++#include <new>
+ 
+ AsyncWiFiManagerParameter::AsyncWiFiManagerParameter(const char *custom) {
+ 	_id = NULL;
+@@ -438,7 +439,9 @@ void AsyncWiFiManager::loop() {
+ 		if (_loop_scan) {
+ 			_release();
+ 			_scanNetworks();
++			_claim();
+ 			_loop_scan = false;
++			_release();
+ 		} else {
+ 			_release();
+ 		}
+@@ -449,7 +452,11 @@ void AsyncWiFiManager::loop() {
+ 
+ void AsyncWiFiManager::sendNetworkList(AsyncResponseStream *response) {
+ 	String pager;
++	_claim();	// A scan replaces the list
+ 	//display networks in page
++	if (_scanFailed) {
++		response->print(F("<p>The scan failed, so this list may be out of date. Try again.</p>"));
++	}
+ 	for (int i = 0; i < wifiSSIDCount; i++) {
+ 		if (wifiSSIDs[i].duplicate == true) {
+ 			continue; // skip dups
+@@ -475,6 +482,7 @@ void AsyncWiFiManager::sendNetworkList(AsyncResponseStream *response) {
+ 	if (wifiSSIDCount == 0) {
+ 		response->print(F("No networks found"));
+ 	}
++	_release();
+ }
+ 
+ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
+@@ -491,22 +499,23 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
+ 		DEBUG_WM(String("Found ") + n + " SSIDs");
+ 	}
+ 
+-	if (n > 0) {
+-		/* WE SHOULD MOVE THIS IN PLACE ATOMICALLY */
+-		if (wifiSSIDs) {
+-			delete[] wifiSSIDs;
+-		}
++	// Made on the side and then swapped in, since a web page could be reading the list
++	WiFiResult *networks = NULL;
++	bool failed = n < 0;
+ 
+-		wifiSSIDs = new WiFiResult[n];
+-		wifiSSIDCount = n;
++	if (n > 0) {
++		networks = new (std::nothrow) WiFiResult[n];
++		failed = networks == NULL;
++	}
+ 
++	if (networks != NULL) {
+ 		for (wifi_ssid_count_t i = 0; i < n; i++) {
+-			wifiSSIDs[i].duplicate = false;
++			networks[i].duplicate = false;
+ 
+ #if defined(ESP8266)
+-			bool res = WiFi.getNetworkInfo(i, wifiSSIDs[i].SSID, wifiSSIDs[i].encryptionType, wifiSSIDs[i].RSSI, wifiSSIDs[i].BSSID, wifiSSIDs[i].channel, wifiSSIDs[i].isHidden);
++			bool res = WiFi.getNetworkInfo(i, networks[i].SSID, networks[i].encryptionType, networks[i].RSSI, networks[i].BSSID, networks[i].channel, networks[i].isHidden);
+ #else
+-            bool res = WiFi.getNetworkInfo(i, wifiSSIDs[i].SSID, wifiSSIDs[i].encryptionType, wifiSSIDs[i].RSSI, wifiSSIDs[i].BSSID, wifiSSIDs[i].channel);
++            bool res = WiFi.getNetworkInfo(i, networks[i].SSID, networks[i].encryptionType, networks[i].RSSI, networks[i].BSSID, networks[i].channel);
+ #endif
+ 		}
+ 
+@@ -515,8 +524,8 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
+ 		// old sort
+ 		for (int i = 0; i < n; i++) {
+ 			for (int j = i + 1; j < n; j++) {
+-				if (wifiSSIDs[j].RSSI > wifiSSIDs[i].RSSI) {
+-					std::swap(wifiSSIDs[i], wifiSSIDs[j]);
++				if (networks[j].RSSI > networks[i].RSSI) {
++					std::swap(networks[i], networks[j]);
+ 				}
+ 			}
+ 		}
+@@ -525,20 +534,33 @@ void AsyncWiFiManager::copySSIDInfo(wifi_ssid_count_t n) {
+ 		if (_removeDuplicateAPs) {
+ 			String cssid;
+ 			for (int i = 0; i < n; i++) {
+-				if (wifiSSIDs[i].duplicate == true)
++				if (networks[i].duplicate == true)
+ 					continue;
+-				cssid = wifiSSIDs[i].SSID;
++				cssid = networks[i].SSID;
+ 				for (int j = i + 1; j < n; j++) {
+-					if (cssid == wifiSSIDs[j].SSID) {
+-						DEBUG_WM("DUP AP: " + wifiSSIDs[j].SSID);
+-						wifiSSIDs[j].duplicate = true; // set dup aps to NULL
++					if (cssid == networks[j].SSID) {
++						DEBUG_WM("DUP AP: " + networks[j].SSID);
++						networks[j].duplicate = true; // set dup aps to NULL
+ 					}
+ 				}
+ 			}
+ 		}
++	}
+ 
++	if (n >= 0) {
+ 		WiFi.scanDelete();
+ 	}
++
++	WiFiResult *old = NULL;
++	_claim();
++	_scanFailed = failed;
++	if (!failed) {
++		old = wifiSSIDs;
++		wifiSSIDs = networks;
++		wifiSSIDCount = n;
++	}
++	_release();
++	delete[] old;
+ }
+ 
+ void AsyncWiFiManager::startConfigPortal() {
+@@ -562,6 +584,11 @@ void AsyncWiFiManager::stopConfigPortal(int timeoutMs) {
+ }
+ 
+ void AsyncWiFiManager::_scanNetworks() {
++#ifdef ESP32
++	if (WiFi.status() != WL_CONNECTED) {
++		WiFi.disconnect();	// ESP32, can't scan while trying to connect to an AP.
++	}
++#endif
+ 	wifi_ssid_count_t n = WiFi.scanNetworks(false);
+ 	copySSIDInfo(n);
+ }
+@@ -576,11 +603,6 @@ bool AsyncWiFiManager::_startConfigPortal() {
+ 		// For ESP8266, need to save the current SSID and password
+ //		_router_ssid = WiFi.SSID();
+ //		_router_pass = WiFi.psk();
+-#else
+-		wl_status_t status = WiFi.status();
+-		if (status != WL_CONNECTED) {
+-			WiFi.disconnect();	// ESP32, can't scan while trying to connect to an AP.
+-		}
+ #endif
+ 
+ 		_scanNetworks();
+@@ -615,12 +637,13 @@ void AsyncWiFiManager::_stopConfigPortal() {
  		}
  	}
  
@@ -15,8 +161,61 @@ index e7de952..843b0c6 100644
 +	WiFiResult *networks = wifiSSIDs;
 +	wifiSSIDs = NULL;
  	wifiSSIDCount = 0;
++	_scanFailed = false;
 +	_release();
 +	delete[] networks;
  
  	if (_portalSet){
  		_portalSet = false;
+@@ -704,13 +727,17 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
+ 	DEBUG_WM(F("Handle wifi"));
+ 
+ 	String useStatic = request->arg("static");
+-	_loop_scan = request->hasParam("scan");
++
++	_claim();
++	if (request->hasParam("scan")) {
++		_loop_scan = true;
++	}
++	bool scanning = _loop_scan;	// The list is only worth showing once it's finished
++	_release();
+ 	
+ 	AsyncResponseStream *response = request->beginResponseStream("text/html");
+ 
+-	if (_loop_scan) {
+-		_release();
+-
++	if (scanning) {
+ 		response->print(_wifiHead);
+ 		response->print(FPSTR(HTTP_STYLE));
+ 		response->print(_customHeadHTML);
+@@ -725,8 +752,6 @@ void AsyncWiFiManager::handleWifi(AsyncWebServerRequest *request) {
+ 		return;
+ 	}
+ 
+-	_release();
+-
+ 	response->print(_wifiHead);
+ 	response->print(FPSTR(HTTP_SCRIPT));
+ 	response->print(FPSTR(HTTP_STYLE));
+diff --git a/src/AsyncWiFiManager.h b/src/AsyncWiFiManager.h
+index b384898..a68bac0 100644
+--- a/src/AsyncWiFiManager.h
++++ b/src/AsyncWiFiManager.h
+@@ -53,7 +53,7 @@ const char HTTP_FORM_END[] PROGMEM
+ const char HTTP_SCAN_LINK[] PROGMEM
+ 		= "<br/><div class=\"c\"><a href=\"/wifi?static={s}&scan=1\"><button>Scan</button></a></div>";
+ const char HTTP_SCAN_REFRESH[] PROGMEM
+-		= "<meta http-equiv=\"refresh\" content=\"5; url=/wifi?static={s}\">";
++		= "<meta http-equiv=\"refresh\" content=\"2; url=/wifi?static={s}\">";
+ const char HTTP_SAVED[] PROGMEM
+ 		= "<div>Credentials Saved<br />Trying to connect ESP to network.<br />If it fails reconnect to AP to try again</div>";
+ const char HTTP_END[] PROGMEM = "</div></body></html>";
+@@ -171,6 +171,7 @@ private:
+ 	bool _isAP = false;				// True if AP is enabled
+ 	int _loop_ap_state = -1;
+ 	bool _loop_scan = false;
++	bool _scanFailed = false;		// The last scan failed, so the list is from an earlier one
+ 	bool _dnsRunning = false;		// Make calls to dns server idempotent
+ 	String _router_ssid;
+ 	String _router_pass;

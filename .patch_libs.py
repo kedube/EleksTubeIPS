@@ -19,7 +19,7 @@ PATCHES = {
     # which stopped the program with "tcp_receive: wrong state"
     "AsyncTCP": "patches/AsyncTCP.patch",
     # Closing the Wi-Fi portal's access point left a freed pointer behind, so a later scan or
-    # reconnect freed it again and restarted the clock.
+    # reconnect freed it again and restarted the clock. The portal's other fixes are here too.
     "AsyncWiFiManager": "patches/AsyncWiFiManager.patch",
 }
 

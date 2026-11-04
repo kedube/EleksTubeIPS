@@ -83,6 +83,7 @@ This is a fork of [judge2005/EleksTubeIPS](https://github.com/judge2005/EleksTub
 ### Other fixes
 
 * **The static IP address is kept** (from a comment on [upstream issue #31](https://github.com/judge2005/EleksTubeIPS/issues/31)). The address set with **Configure Static WiFi** in the clock's Wi-Fi portal was used until the clock restarted, then it went back to DHCP. The clock now saves it, and restarts to use a new one. An empty Subnet means 255.255.255.0, and an empty DNS1 means the gateway. Clear Static IP to go back to DHCP.
+* **Scan works in the Wi-Fi portal while the clock is trying to connect.** An ESP32 can't do both, so a scan could fail and leave the old list up with no error. The clock now stops trying while it scans, shows the list when the scan has finished, and says if one fails.
 * **Installing only the firmware updates the settings pages too.** They're now built into the firmware as well as the filesystem image, so new settings appear without a full install, which would replace your uploaded images.
 * A forecast that fails to download or arrives incomplete is retried after 3 minutes instead of 15, and whatever did arrive is shown ([upstream issue #92](https://github.com/judge2005/EleksTubeIPS/issues/92)).
 * A brightness change from Home Assistant now redraws the weather display immediately.
