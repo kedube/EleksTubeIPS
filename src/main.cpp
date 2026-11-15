@@ -1585,13 +1585,13 @@ void addWebLoginCookie(AsyncWebServerRequest *request, AsyncWebServerResponse *r
 // Answers every request that needs the login and doesn't have it, before any other handler sees it
 class WebLoginHandler : public AsyncWebHandler {
 public:
-	bool canHandle(AsyncWebServerRequest *request) override {
+	bool canHandle(AsyncWebServerRequest *request) const override {
 		if (!webLoginRequired(request)) {
 			return false;
 		}
 
 		if (request->url() == ws->url()) {
-			AsyncWebHeader *cookies = request->getHeader("Cookie");
+			const AsyncWebHeader *cookies = request->getHeader("Cookie");
 			return cookies == NULL || ("; " + cookies->value() + ";").indexOf("; " + webLoginCookie() + ";") < 0;
 		}
 
@@ -1744,7 +1744,7 @@ static AsyncWebServerResponse *appResponse(AsyncWebServerRequest *request) {
 
 // Answers the request if the browser's copy is current. Otherwise returns NULL.
 static AsyncWebServerResponse *notModified(AsyncWebServerRequest *request, const String &etag) {
-	AsyncWebHeader *match = request->getHeader("If-None-Match");
+	const AsyncWebHeader *match = request->getHeader("If-None-Match");
 	return etag.length() > 0 && match != NULL && match->value() == etag ? request->beginResponse(304) : NULL;
 }
 
@@ -1761,7 +1761,7 @@ void configureWebServer() {
 		server->on(page.url, HTTP_GET, [&page](AsyncWebServerRequest *request) {
 			AsyncWebServerResponse *response = notModified(request, firmwareEtag());
 			if (response == NULL) {
-				response = request->beginResponse_P(200, "text/html", page.start, page.end - page.start);
+				response = request->beginResponse(200, "text/html", page.start, page.end - page.start);
 				response->addHeader("Content-Encoding", "gzip");
 			}
 			addEtag(response, firmwareEtag());
@@ -1774,7 +1774,7 @@ void configureWebServer() {
 		server->on(file.url, HTTP_GET, [&file](AsyncWebServerRequest *request) {
 			AsyncWebServerResponse *response = notModified(request, firmwareEtag());
 			if (response == NULL) {
-				response = request->beginResponse_P(200, file.type, file.start, file.end - file.start);
+				response = request->beginResponse(200, file.type, file.start, file.end - file.start);
 				response->addHeader("Content-Encoding", "gzip");
 			}
 			addEtag(response, firmwareEtag());

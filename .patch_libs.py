@@ -8,13 +8,8 @@ import sys
 # is left alone. If an earlier version of a patch is applied, the files it changes are put back
 # first. One that still doesn't fit stops the build, because the library has changed under it.
 PATCHES = {
-    # When the weather fetch left the clock short of memory, pages and files being sent lost data and
-    # never finished, and a new connection could abort the program. Dropping the headers no handler asked
-    # for read memory it had just freed.
-    "ESP Async WebServer": "patches/ESPAsyncWebServer.patch",
-    # A web connection that came in when there wasn't the memory for it was freed, then used by lwIP,
-    # which stopped the program with "tcp_receive: wrong state"
-    "AsyncTCP": "patches/AsyncTCP.patch",
+    # None at the moment. Each is the library's folder name in .pio/libdeps, then the patch:
+    # "Library folder name": "patches/Library.patch",
 }
 
 def git(library, *args):
