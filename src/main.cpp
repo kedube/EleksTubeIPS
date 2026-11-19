@@ -42,6 +42,9 @@
 #include "Uptime.h"
 #include "TLSArena.h"
 #include "WiFiWatchdog.h"
+#include "HTTPSProxy.h"
+
+uint32_t weatherOk = 0, weatherFailed = 0;	// PROTOTYPE: does TLS to the weather still work
 
 //#define DEBUG(...) { Serial.println(__VA_ARGS__); }
 #ifndef DEBUG
@@ -1036,6 +1039,7 @@ void weatherTaskFn(void *pArg) {
 				TLSArena::begin(StaticSprite::output_buffer, sizeof(StaticSprite::output_buffer));
 			}
 			bool gotWeather = weatherService->getWeatherInfo();
+			(gotWeather ? weatherOk : weatherFailed)++;	// PROTOTYPE
 			if (lendDisplayBuffer) {
 				// Never seen, but if TLS kept some of the buffer, it mustn't end up in a later loan too
 				if (!TLSArena::end()) {
@@ -1812,8 +1816,20 @@ void configureWebServer() {
 	// attach AsyncWebSocket
 	ws->onEvent(wsHandler);
 	server->addHandler(ws);
+	server->on("/heapz", HTTP_GET, [](AsyncWebServerRequest *request) {	// PROTOTYPE
+		if (request->hasParam("max")) {
+			HTTPSProxy::setMaxSessions(request->getParam("max")->value().toInt());
+		}
+		String json = HTTPSProxy::stats(request->hasParam("reset"));
+		json.replace("}", ",\"weatherOk\":" + String(weatherOk) + ",\"weatherFailed\":" + String(weatherFailed) + "}");
+		request->send(200, "application/json", json);
+	});
+	server->on("/benchz", HTTP_GET, [](AsyncWebServerRequest *request) {	// EXPERIMENT
+		request->send(200, "application/json", HTTPSProxy::bench(request->hasParam("soft") ? request->getParam("soft")->value().toInt() : request->hasParam("start") ? -2 : -1));
+	});
 	server->begin();
 	ws->enable(true);
+	HTTPSProxy::begin(hostName.value.c_str());
 }
 
 
