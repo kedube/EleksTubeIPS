@@ -2290,7 +2290,7 @@ IPSClock::getTimeZone().setCallback(onTimezoneChanged);
 	xTaskCreatePinnedToCore(
 		improvTaskFn, /* Function to implement the task */
 		"Improv task", /* Name of the task */
-		2048,  /* Stack size in words */
+		4096,  /* Stack size in bytes. Answering the web installer needed about 2.2K, more than 2K */
 		NULL,  /* Task input parameter */
 		tskIDLE_PRIORITY + 1,  /* More than background tasks */
 		&improvTask,  /* Task handle. */
